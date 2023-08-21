@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique @db.VarChar(100)
+  password  String   @db.VarChar(100)
+  firstName String   @default("firstname") @map("first_name") @db.VarChar(100)
+  lastName  String   @default("lastname") @map("last_name") @db.VarChar(100)
+  isActive  Boolean  @default(true) @map("is_active")
+  role      UserRole @default(OWNER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  stations Station[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  OWNER
+}
+
+model Station {
+  id         String   @id @default(uuid())
+  name       String   @default("name") @db.VarChar(100)
+  address    String   @default("address") @db.VarChar(250)
+  longtitude String   @default("41.311225758289005") @db.VarChar(100)
+  latitude   String   @default("69.27955278476713") @db.VarChar(100)
+  openTime   String   @default("09:00") @map("open_time")
+  closeTime  String   @default("18:00") @map("close_time")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @map("updated_at")
+  isDeleted  Boolean  @default(false) @map("is_deleted")
+
+  ownerId  String    @map("owner_id")
+  owner    User      @relation(fields: [ownerId], references: [id])
+  chargers Charger[]
+
+  @@map("stations")
+}
+
+model Charger {
+  id        String   @id @default(uuid())
+  name      String   @default("name") @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  isDeleted Boolean  @default(false) @map("is_deleted")
+
+  stationId String  @map("station_id")
+  station   Station @relation(fields: [stationId], references: [id])
+  plugs     Plug[]
+
+  @@map("chargers")
+}
+
+model Plug {
+  id        String     @id @default(uuid())
+  type      PlugTypes  @default(CCS_1)
+  status    PlugStatus @default(AVAILABLE)
+  qrCode    String     @default(uuid()) @map("qr_code")
+  voltage   String     @default("100")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @default(now()) @map("updated_at")
+
+  chargerId String  @map("charger_id")
+  charger   Charger @relation(fields: [chargerId], references: [id])
+
+  @@map("plugs")
+}
+
+enum PlugStatus {
+  AVAILABLE
+  BUSY
+  MAINTENANCE
+}
+
+enum PlugTypes {
+  CHAdeMO
+  CCS_1
+  CCS_2
+  GB_T_DC
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  firstName String   @default("name") @map("first_name") @db.VarChar(100)
+  lastName  String   @default("surname") @map("last_name") @db.VarChar(100)
+  phone     String   @unique
+  balance   Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  isActive  Boolean  @default(true) @map("is_active")
+  isDeleted Boolean  @default(false) @map("is_deleted")
+
+  @@map("customers")
+}
+
+model Otp {
+  id        String   @id @default(uuid())
+  otp       String   @unique @db.VarChar(20)
+  phone     String   @unique @default("phone") @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("otps")
+}
